@@ -77,12 +77,8 @@ func (h *Handle) BridgeSetMcastSnoop(link Link, on bool) error {
 	return err
 }
 
-func BridgeSetMcastSnoopOn(link Link) error {
-	return pkgHandle.BridgeSetMcastSnoop(link, true)
-}
-
-func BridgeSetMcastSnoopOff(link Link) error {
-	return pkgHandle.BridgeSetMcastSnoop(link, false)
+func BridgeSetMcastSnoop(link Link, on bool) error {
+	return pkgHandle.BridgeSetMcastSnoop(link, on)
 }
 
 func (h *Handle) LinkSetARPOff(link Link) error {

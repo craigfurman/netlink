@@ -1063,17 +1063,17 @@ func TestBridgeSetMcastSnoopOffAndOn(t *testing.T) {
 	if err := LinkAdd(bridge); err != nil {
 		t.Fatal(err)
 	}
-	expectMcastSnooping(t, bridgeName, true)
+	initialState := bridge.MulticastSnooping
 
-	if err := BridgeSetMcastSnoopOff(bridge); err != nil {
+	if err := BridgeSetMcastSnoop(bridge, !initialState); err != nil {
 		t.Fatal(err)
 	}
-	expectMcastSnooping(t, bridgeName, false)
+	expectMcastSnooping(t, bridgeName, !initialState)
 
-	if err := BridgeSetMcastSnoopOn(bridge); err != nil {
+	if err := BridgeSetMcastSnoop(bridge, initialState); err != nil {
 		t.Fatal(err)
 	}
-	expectMcastSnooping(t, bridgeName, true)
+	expectMcastSnooping(t, bridgeName, initialState)
 }
 
 func expectMcastSnooping(t *testing.T, linkName string, expected bool) {
