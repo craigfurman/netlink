@@ -58,6 +58,33 @@ func (h *Handle) ensureIndex(link *LinkAttrs) {
 	}
 }
 
+func (h *Handle) BridgeSetMcastSnoop(link Link, on bool) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(syscall.RTM_NEWLINK, syscall.NLM_F_ACK)
+
+	data := []byte{0x0a, 0x00, 0x01, 0x00, 0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x00, 0x00, 0x0c, 0x00, 0x02, 0x00}
+
+	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	br := nl.NewRtAttr(syscall.IFLA_LINKINFO, data)
+	nl.NewRtAttrChild(br, nl.IFLA_BR_MCAST_SNOOPING, boolToByte(on))
+	req.AddData(br)
+
+	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
+	return err
+}
+
+func BridgeSetMcastSnoopOn(link Link) error {
+	return pkgHandle.BridgeSetMcastSnoop(link, true)
+}
+
+func BridgeSetMcastSnoopOff(link Link) error {
+	return pkgHandle.BridgeSetMcastSnoop(link, false)
+}
+
 func (h *Handle) LinkSetARPOff(link Link) error {
 	base := link.Attrs()
 	h.ensureIndex(base)
@@ -1092,6 +1119,8 @@ func LinkDeserialize(hdr *syscall.NlMsghdr, m []byte) (Link, error) {
 						parseVtiData(link, data)
 					case "vrf":
 						parseVrfData(link, data)
+					case "bridge":
+						parseBridgeData(link, data)
 					}
 				}
 			}
@@ -1675,6 +1704,16 @@ func parseVrfData(link Link, data []syscall.NetlinkRouteAttr) {
 		switch datum.Attr.Type {
 		case nl.IFLA_VRF_TABLE:
 			vrf.Table = native.Uint32(datum.Value[0:4])
+		}
+	}
+}
+
+func parseBridgeData(bridge Link, data []syscall.NetlinkRouteAttr) {
+	br := bridge.(*Bridge)
+	for _, datum := range data {
+		switch datum.Attr.Type {
+		case nl.IFLA_BR_MCAST_SNOOPING:
+			br.MulticastSnooping = datum.Value[0] == 1
 		}
 	}
 }

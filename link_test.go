@@ -227,7 +227,7 @@ func TestLinkAddDelBridge(t *testing.T) {
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()
 
-	testLinkAddDel(t, &Bridge{LinkAttrs{Name: "foo", MTU: 1400}})
+	testLinkAddDel(t, &Bridge{LinkAttrs: LinkAttrs{Name: "foo", MTU: 1400}})
 }
 
 func TestLinkAddDelGretap(t *testing.T) {
@@ -435,7 +435,7 @@ func TestLinkAddDelBridgeMaster(t *testing.T) {
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()
 
-	master := &Bridge{LinkAttrs{Name: "foo"}}
+	master := &Bridge{LinkAttrs: LinkAttrs{Name: "foo"}}
 	if err := LinkAdd(master); err != nil {
 		t.Fatal(err)
 	}
@@ -450,12 +450,12 @@ func TestLinkSetUnsetResetMaster(t *testing.T) {
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()
 
-	master := &Bridge{LinkAttrs{Name: "foo"}}
+	master := &Bridge{LinkAttrs: LinkAttrs{Name: "foo"}}
 	if err := LinkAdd(master); err != nil {
 		t.Fatal(err)
 	}
 
-	newmaster := &Bridge{LinkAttrs{Name: "bar"}}
+	newmaster := &Bridge{LinkAttrs: LinkAttrs{Name: "bar"}}
 	if err := LinkAdd(newmaster); err != nil {
 		t.Fatal(err)
 	}
@@ -465,7 +465,7 @@ func TestLinkSetUnsetResetMaster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	nonexistsmaster := &Bridge{LinkAttrs{Name: "foobar"}}
+	nonexistsmaster := &Bridge{LinkAttrs: LinkAttrs{Name: "foobar"}}
 
 	if err := LinkSetMaster(slave, nonexistsmaster); err == nil {
 		t.Fatal("error expected")
@@ -1054,11 +1054,44 @@ func TestLinkAddDelVti(t *testing.T) {
 		Remote:    net.IPv4(127, 0, 0, 1)})
 }
 
+func TestBridgeSetMcastSnoopOffAndOn(t *testing.T) {
+	tearDown := setUpNetlinkTest(t)
+	defer tearDown()
+
+	bridgeName := "foo"
+	bridge := &Bridge{LinkAttrs: LinkAttrs{Name: bridgeName}}
+	if err := LinkAdd(bridge); err != nil {
+		t.Fatal(err)
+	}
+	expectMcastSnooping(t, bridgeName, true)
+
+	if err := BridgeSetMcastSnoopOff(bridge); err != nil {
+		t.Fatal(err)
+	}
+	expectMcastSnooping(t, bridgeName, false)
+
+	if err := BridgeSetMcastSnoopOn(bridge); err != nil {
+		t.Fatal(err)
+	}
+	expectMcastSnooping(t, bridgeName, true)
+}
+
+func expectMcastSnooping(t *testing.T, linkName string, expected bool) {
+	bridge, err := LinkByName(linkName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if actual := bridge.(*Bridge).MulticastSnooping; actual != expected {
+		t.Fatalf("expected %t got %t", expected, actual)
+	}
+}
+
 func TestLinkSubscribeWithProtinfo(t *testing.T) {
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()
 
-	master := &Bridge{LinkAttrs{Name: "foo"}}
+	master := &Bridge{LinkAttrs: LinkAttrs{Name: "foo"}}
 	if err := LinkAdd(master); err != nil {
 		t.Fatal(err)
 	}

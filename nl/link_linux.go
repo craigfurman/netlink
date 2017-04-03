@@ -452,3 +452,5 @@ const (
 	IFLA_VRF_UNSPEC = iota
 	IFLA_VRF_TABLE
 )
+
+const IFLA_BR_MCAST_SNOOPING = 0x17
