@@ -453,4 +453,7 @@ const (
 	IFLA_VRF_TABLE
 )
 
-const IFLA_BR_MCAST_SNOOPING = 0x17
+const (
+	IFLA_BR_HELLO_TIME     = 0x2
+	IFLA_BR_MCAST_SNOOPING = 0x17
+)

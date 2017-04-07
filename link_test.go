@@ -1106,6 +1106,50 @@ func expectMcastSnooping(t *testing.T, linkName string, expected bool) {
 	}
 }
 
+func TestBridgeCreationWithHelloTime(t *testing.T) {
+	tearDown := setUpNetlinkTest(t)
+	defer tearDown()
+
+	bridgeWithSpecifiedHelloTimeName := "foo"
+	helloTime := uint32(300)
+	bridgeWithSpecifiedHelloTime := &Bridge{LinkAttrs: LinkAttrs{Name: bridgeWithSpecifiedHelloTimeName}, HelloTime: helloTime}
+	if err := LinkAdd(bridgeWithSpecifiedHelloTime); err != nil {
+		t.Fatal(err)
+	}
+
+	retrievedBridge, err := LinkByName(bridgeWithSpecifiedHelloTimeName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actualHelloTime := retrievedBridge.(*Bridge).HelloTime
+	if actualHelloTime != helloTime {
+		t.Fatalf("expected %d got %d", helloTime, actualHelloTime)
+	}
+	if err := LinkDel(bridgeWithSpecifiedHelloTime); err != nil {
+		t.Fatal(err)
+	}
+
+	bridgeWithDefaultHelloTimeName := "bar"
+	bridgeWithDefaultHelloTime := &Bridge{LinkAttrs: LinkAttrs{Name: bridgeWithDefaultHelloTimeName}}
+	if err := LinkAdd(bridgeWithDefaultHelloTime); err != nil {
+		t.Fatal(err)
+	}
+
+	retrievedBridge, err = LinkByName(bridgeWithDefaultHelloTimeName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actualHelloTime = retrievedBridge.(*Bridge).HelloTime
+	if actualHelloTime != 200 {
+		t.Fatalf("expected %d got %d", 200, actualHelloTime)
+	}
+	if err := LinkDel(bridgeWithDefaultHelloTime); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestLinkSubscribeWithProtinfo(t *testing.T) {
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()

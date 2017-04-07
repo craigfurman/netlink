@@ -831,12 +831,7 @@ func (h *Handle) LinkAdd(link Link) error {
 	} else if vrf, ok := link.(*Vrf); ok {
 		addVrfAttrs(vrf, linkInfo)
 	} else if bridge, ok := link.(*Bridge); ok {
-		data := nl.NewRtAttrChild(linkInfo, nl.IFLA_INFO_DATA, nil)
-		mcastSnooping := true
-		if bridge.MulticastSnooping != nil {
-			mcastSnooping = *bridge.MulticastSnooping
-		}
-		nl.NewRtAttrChild(data, nl.IFLA_BR_MCAST_SNOOPING, boolToByte(mcastSnooping))
+		addBridgeAttrs(bridge, linkInfo)
 	}
 
 	req.AddData(linkInfo)
@@ -1688,10 +1683,26 @@ func parseVrfData(link Link, data []syscall.NetlinkRouteAttr) {
 	}
 }
 
+func addBridgeAttrs(bridge *Bridge, linkInfo *nl.RtAttr) {
+	data := nl.NewRtAttrChild(linkInfo, nl.IFLA_INFO_DATA, nil)
+	mcastSnooping := true
+	if bridge.MulticastSnooping != nil {
+		mcastSnooping = *bridge.MulticastSnooping
+	}
+	helloTime := uint32(200)
+	if bridge.HelloTime != 0 {
+		helloTime = bridge.HelloTime
+	}
+	nl.NewRtAttrChild(data, nl.IFLA_BR_HELLO_TIME, nl.Uint32Attr(helloTime))
+	nl.NewRtAttrChild(data, nl.IFLA_BR_MCAST_SNOOPING, boolToByte(mcastSnooping))
+}
+
 func parseBridgeData(bridge Link, data []syscall.NetlinkRouteAttr) {
 	br := bridge.(*Bridge)
 	for _, datum := range data {
 		switch datum.Attr.Type {
+		case nl.IFLA_BR_HELLO_TIME:
+			br.HelloTime = native.Uint32(datum.Value[0:4])
 		case nl.IFLA_BR_MCAST_SNOOPING:
 			mcastSnooping := datum.Value[0] == 1
 			br.MulticastSnooping = &mcastSnooping
