@@ -58,29 +58,6 @@ func (h *Handle) ensureIndex(link *LinkAttrs) {
 	}
 }
 
-func (h *Handle) BridgeSetMcastSnoop(link Link, on bool) error {
-	base := link.Attrs()
-	h.ensureIndex(base)
-	req := h.newNetlinkRequest(syscall.RTM_NEWLINK, syscall.NLM_F_ACK)
-
-	data := []byte{0x0a, 0x00, 0x01, 0x00, 0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x00, 0x00, 0x0c, 0x00, 0x02, 0x00}
-
-	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
-	msg.Index = int32(base.Index)
-	req.AddData(msg)
-
-	br := nl.NewRtAttr(syscall.IFLA_LINKINFO, data)
-	nl.NewRtAttrChild(br, nl.IFLA_BR_MCAST_SNOOPING, boolToByte(on))
-	req.AddData(br)
-
-	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
-	return err
-}
-
-func BridgeSetMcastSnoop(link Link, on bool) error {
-	return pkgHandle.BridgeSetMcastSnoop(link, on)
-}
-
 func (h *Handle) LinkSetARPOff(link Link) error {
 	base := link.Attrs()
 	h.ensureIndex(base)
@@ -853,6 +830,13 @@ func (h *Handle) LinkAdd(link Link) error {
 		addVtiAttrs(vti, linkInfo)
 	} else if vrf, ok := link.(*Vrf); ok {
 		addVrfAttrs(vrf, linkInfo)
+	} else if bridge, ok := link.(*Bridge); ok {
+		data := nl.NewRtAttrChild(linkInfo, nl.IFLA_INFO_DATA, nil)
+		mcastSnooping := true
+		if bridge.MulticastSnooping != nil {
+			mcastSnooping = *bridge.MulticastSnooping
+		}
+		nl.NewRtAttrChild(data, nl.IFLA_BR_MCAST_SNOOPING, boolToByte(mcastSnooping))
 	}
 
 	req.AddData(linkInfo)
@@ -1709,7 +1693,8 @@ func parseBridgeData(bridge Link, data []syscall.NetlinkRouteAttr) {
 	for _, datum := range data {
 		switch datum.Attr.Type {
 		case nl.IFLA_BR_MCAST_SNOOPING:
-			br.MulticastSnooping = datum.Value[0] == 1
+			mcastSnooping := datum.Value[0] == 1
+			br.MulticastSnooping = &mcastSnooping
 		}
 	}
 }

@@ -1054,26 +1054,32 @@ func TestLinkAddDelVti(t *testing.T) {
 		Remote:    net.IPv4(127, 0, 0, 1)})
 }
 
-func TestBridgeSetMcastSnoopOffAndOn(t *testing.T) {
+func TestBridgeCreationWithMulticastSnooping(t *testing.T) {
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()
 
-	bridgeName := "foo"
-	bridge := &Bridge{LinkAttrs: LinkAttrs{Name: bridgeName}}
-	if err := LinkAdd(bridge); err != nil {
+	bridgeWithDefaultMcastSnoopName := "foo"
+	bridgeWithDefaultMcastSnoop := &Bridge{LinkAttrs: LinkAttrs{Name: bridgeWithDefaultMcastSnoopName}}
+	if err := LinkAdd(bridgeWithDefaultMcastSnoop); err != nil {
 		t.Fatal(err)
 	}
-	initialState := bridge.MulticastSnooping
+	expectMcastSnooping(t, bridgeWithDefaultMcastSnoopName, true)
 
-	if err := BridgeSetMcastSnoop(bridge, !initialState); err != nil {
+	mcastSnoop := true
+	bridgeWithMcastSnoopOnName := "bar"
+	bridgeWithMcastSnoopOn := &Bridge{LinkAttrs: LinkAttrs{Name: bridgeWithMcastSnoopOnName}, MulticastSnooping: &mcastSnoop}
+	if err := LinkAdd(bridgeWithMcastSnoopOn); err != nil {
 		t.Fatal(err)
 	}
-	expectMcastSnooping(t, bridgeName, !initialState)
+	expectMcastSnooping(t, bridgeWithMcastSnoopOnName, true)
 
-	if err := BridgeSetMcastSnoop(bridge, initialState); err != nil {
+	mcastSnoop = false
+	bridgeWithMcastSnoopOffName := "foobar"
+	bridgeWithMcastSnoopOff := &Bridge{LinkAttrs: LinkAttrs{Name: bridgeWithMcastSnoopOffName}, MulticastSnooping: &mcastSnoop}
+	if err := LinkAdd(bridgeWithMcastSnoopOff); err != nil {
 		t.Fatal(err)
 	}
-	expectMcastSnooping(t, bridgeName, initialState)
+	expectMcastSnooping(t, bridgeWithMcastSnoopOffName, false)
 }
 
 func expectMcastSnooping(t *testing.T, linkName string, expected bool) {
@@ -1082,7 +1088,7 @@ func expectMcastSnooping(t *testing.T, linkName string, expected bool) {
 		t.Fatal(err)
 	}
 
-	if actual := bridge.(*Bridge).MulticastSnooping; actual != expected {
+	if actual := *bridge.(*Bridge).MulticastSnooping; actual != expected {
 		t.Fatalf("expected %t got %t", expected, actual)
 	}
 }
