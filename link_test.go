@@ -1068,6 +1068,9 @@ func TestBridgeCreationWithMulticastSnooping(t *testing.T) {
 		t.Fatal(err)
 	}
 	expectMcastSnooping(t, bridgeWithDefaultMcastSnoopName, true)
+	if err := LinkDel(bridgeWithDefaultMcastSnoop); err != nil {
+		t.Fatal(err)
+	}
 
 	mcastSnoop := true
 	bridgeWithMcastSnoopOnName := "bar"
@@ -1076,6 +1079,9 @@ func TestBridgeCreationWithMulticastSnooping(t *testing.T) {
 		t.Fatal(err)
 	}
 	expectMcastSnooping(t, bridgeWithMcastSnoopOnName, true)
+	if err := LinkDel(bridgeWithMcastSnoopOn); err != nil {
+		t.Fatal(err)
+	}
 
 	mcastSnoop = false
 	bridgeWithMcastSnoopOffName := "foobar"
@@ -1084,6 +1090,9 @@ func TestBridgeCreationWithMulticastSnooping(t *testing.T) {
 		t.Fatal(err)
 	}
 	expectMcastSnooping(t, bridgeWithMcastSnoopOffName, false)
+	if err := LinkDel(bridgeWithMcastSnoopOff); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func expectMcastSnooping(t *testing.T, linkName string, expected bool) {
