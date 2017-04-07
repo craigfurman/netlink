@@ -1055,6 +1055,10 @@ func TestLinkAddDelVti(t *testing.T) {
 }
 
 func TestBridgeCreationWithMulticastSnooping(t *testing.T) {
+	if os.Getenv("TRAVIS_BUILD_DIR") != "" {
+		t.Skipf("Kernel in travis is too old for this test")
+	}
+
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()
 
